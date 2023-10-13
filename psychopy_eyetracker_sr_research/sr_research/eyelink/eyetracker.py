@@ -12,25 +12,28 @@ try:
 except ImportError:
     ProgressBarDialog = None
 
-from ......constants import EyeTrackerConstants
-from ...... import EXP_SCRIPT_DIRECTORY
-from ......errors import print2err, printExceptionDetailsToStdErr
-from ..... import Computer, Device
-from ....eye_events import *
+from psychopy.iohub.constants import EyeTrackerConstants
+from psychopy.iohub import EXP_SCRIPT_DIRECTORY
+from psychopy.iohub.errors import print2err, printExceptionDetailsToStdErr
+from psychopy.iohub.devices import Computer, Device
+from psychopy.iohub.devices.eyetracker.eye_events import *
 
 try:
     pylink.enableUTF8EyeLinkMessages()
 except Exception:
     pass
 
+
 def start_eyelink(eyelink):
     eyelink.startRecording(1, 1, 1, 1)
     gevent.sleep(0.01)
     if not eyelink.waitForBlockStart(100, 1, 0):
-        print2err('EYETRACKER_START_RECORD_EXCEPTION ')
+        print2err("EYETRACKER_START_RECORD_EXCEPTION ")
+
 
 def stop_eyelink(eyelink):
     eyelink.stopRecording()
+
 
 class EyeTracker(EyeTrackerDevice):
     """
@@ -39,10 +42,10 @@ class EyeTracker(EyeTrackerDevice):
     class in the iohub_config.yaml device settings file:
 
         eyetracker.hw.sr_research.eyelink
-        
+
     Examples:
         A. Start ioHub with SR Research EyeLink 1000 and run tracker calibration::
-    
+
             from psychopy.iohub import launchHubServer
             from psychopy.core import getTime, wait
 
@@ -50,38 +53,38 @@ class EyeTracker(EyeTrackerDevice):
             iohub_config = {'eyetracker.hw.sr_research.eyelink.EyeTracker':
                             {'name': 'tracker',
                              'model_name': 'EYELINK 1000 DESKTOP',
-                             'runtime_settings': {'sampling_rate': 500, 
+                             'runtime_settings': {'sampling_rate': 500,
                                                   'track_eyes': 'RIGHT'}
                              }
                             }
             io = launchHubServer(**iohub_config)
-            
+
             # Get the eye tracker device.
             tracker = io.devices.tracker
-                            
+
             # run eyetracker calibration
             r = tracker.runSetupProcedure()
-            
+
         B. Print all eye tracker events received for 2 seconds::
-                        
+
             # Check for and print any eye tracker events received...
             tracker.setRecordingState(True)
-            
+
             stime = getTime()
             while getTime()-stime < 2.0:
                 for e in tracker.getEvents():
                     print(e)
-            
+
         C. Print current eye position for 5 seconds::
-                        
+
             # Check for and print current eye position every 100 msec.
             stime = getTime()
             while getTime()-stime < 5.0:
                 print(tracker.getPosition())
                 wait(0.1)
-            
+
             tracker.setRecordingState(False)
-            
+
             # Stop the ioHub Server
             io.quit()
     """
@@ -93,8 +96,8 @@ class EyeTracker(EyeTrackerDevice):
 
     # >>> Custom class attributes
     _eyelink = None
-    _local_edf_dir = '.'
-    _full_edf_name = 'temp'
+    _local_edf_dir = "."
+    _full_edf_name = "temp"
     _host_edf_name = None
     _active_edf_file = None
     _file_transfer_progress_dialog = None
@@ -104,14 +107,15 @@ class EyeTracker(EyeTrackerDevice):
     # >>> Overwritten class attributes
     DEVICE_TIMEBASE_TO_SEC = 0.001
     EVENT_CLASS_NAMES = [
-        'MonocularEyeSampleEvent',
-        'BinocularEyeSampleEvent',
-        'FixationStartEvent',
-        'FixationEndEvent',
-        'SaccadeStartEvent',
-        'SaccadeEndEvent',
-        'BlinkStartEvent',
-        'BlinkEndEvent']
+        "MonocularEyeSampleEvent",
+        "BinocularEyeSampleEvent",
+        "FixationStartEvent",
+        "FixationEndEvent",
+        "SaccadeStartEvent",
+        "SaccadeEndEvent",
+        "BlinkStartEvent",
+        "BlinkEndEvent",
+    ]
     __slots__ = []
 
     def __init__(self, *args, **kwargs):
@@ -123,7 +127,7 @@ class EyeTracker(EyeTrackerDevice):
 
         if self._iohub_server:
             for dev in self._iohub_server.devices:
-                if dev.__class__.__name__ == 'Keyboard':
+                if dev.__class__.__name__ == "Keyboard":
                     EyeTracker._keyboard = dev
 
         try:
@@ -132,9 +136,11 @@ class EyeTracker(EyeTrackerDevice):
             # attribute to a pylink.EYELINK device class if EyeTracker._eyelink
             # is None.
             if self.setConnectionState(True) != EyeTrackerConstants.EYETRACKER_OK:
-                print2err(" ** EyeLink Error: Could not connect to EyeLink Eye Tracker. "
-                          "EyeLink Eye tracker device will run in 'dummy' mode.")
-                tracker_config['enable_interface_without_connection'] = True
+                print2err(
+                    " ** EyeLink Error: Could not connect to EyeLink Eye Tracker. "
+                    "EyeLink Eye tracker device will run in 'dummy' mode."
+                )
+                tracker_config["enable_interface_without_connection"] = True
                 self.setConnectionState(True)
 
             self._addCommandFunctions()
@@ -144,11 +150,11 @@ class EyeTracker(EyeTrackerDevice):
             self._eyelinkSetScreenPhysicalData()
 
             # Set whether to run in mouse simulation mode or not.
-            simulation_mode = tracker_config.get('simulation_mode', False)
+            simulation_mode = tracker_config.get("simulation_mode", False)
             if simulation_mode is True:
-                self._eyelink.sendCommand('aux_mouse_simulation = YES')
+                self._eyelink.sendCommand("aux_mouse_simulation = YES")
             else:
-                self._eyelink.sendCommand('aux_mouse_simulation = NO')
+                self._eyelink.sendCommand("aux_mouse_simulation = NO")
 
             # set that the EyeLink connected button box, button 5
             # (the big button on most of supported gamepads), will initiate
@@ -166,45 +172,57 @@ class EyeTracker(EyeTrackerDevice):
             # calibration related settings
             eyelink = self._eyelink
 
-            self.sendCalibrationSettingsCommands(eyelink, tracker_config.get('calibration'))
+            self.sendCalibrationSettingsCommands(
+                eyelink, tracker_config.get("calibration")
+            )
 
             # native data recording file
-            default_native_data_file_name = tracker_config.get('default_native_data_file_name', None)
+            default_native_data_file_name = tracker_config.get(
+                "default_native_data_file_name", None
+            )
             if isinstance(default_native_data_file_name, str):
                 if default_native_data_file_name == "EXPFILE":
                     # If edf file name has been set to EXPFILE, use the datastore file name as the local
                     # edf file name, getting around the 8 char host name limit.
-                    EyeTracker._local_edf_dir = os.path.join(EyeTracker._local_edf_dir, "data")
-                    if self._iohub_server.dsfile: 
+                    EyeTracker._local_edf_dir = os.path.join(
+                        EyeTracker._local_edf_dir, "data"
+                    )
+                    if self._iohub_server.dsfile:
                         local_file_name = self._iohub_server.dsfile.fileName[:-5]
                         EyeTracker._full_edf_name = local_file_name
                         EyeTracker._host_edf_name = default_native_data_file_name
                 else:
-                    r = default_native_data_file_name.rfind('.')
+                    r = default_native_data_file_name.rfind(".")
                     if r > 0:
-                        if default_native_data_file_name[r:] == 'edf'.lower():
-                            default_native_data_file_name = default_native_data_file_name[:r]
+                        if default_native_data_file_name[r:] == "edf".lower():
+                            default_native_data_file_name = (
+                                default_native_data_file_name[:r]
+                            )
 
                     if len(default_native_data_file_name) > 7:
                         EyeTracker._full_edf_name = default_native_data_file_name
                         twoDigitRand = np.random.randint(10, 99)
-                        EyeTracker._host_edf_name = self._full_edf_name[:3] + str(twoDigitRand) + self._full_edf_name[5:7]
+                        EyeTracker._host_edf_name = (
+                            self._full_edf_name[:3]
+                            + str(twoDigitRand)
+                            + self._full_edf_name[5:7]
+                        )
                     else:
                         EyeTracker._full_edf_name = default_native_data_file_name
                         EyeTracker._host_edf_name = default_native_data_file_name
             else:
-                print2err('ERROR: default_native_data_file_name must be a string value')
+                print2err("ERROR: default_native_data_file_name must be a string value")
 
             if self._host_edf_name and self._local_edf_dir and self._full_edf_name:
-                EyeTracker._active_edf_file = self._full_edf_name + '.EDF'
-                self._eyelink.openDataFile(self._host_edf_name + '.EDF')
+                EyeTracker._active_edf_file = self._full_edf_name + ".EDF"
+                self._eyelink.openDataFile(self._host_edf_name + ".EDF")
 
             # Creates a fileTransferDialog class that will be used when a connection is closed and
             # a native EDF file needs to be transferred from Host to Experiment
             # PC.
             EyeTracker._eyelink.progressUpdate = self._fileTransferProgressUpdate
         except Exception:
-            print2err(' ---- Error during EyeLink EyeTracker Initialization ---- ')
+            print2err(" ---- Error during EyeLink EyeTracker Initialization ---- ")
             printExceptionDetailsToStdErr()
 
     def trackerTime(self):
@@ -238,8 +256,10 @@ class EyeTracker(EyeTrackerDevice):
         """
         try:
             tracker_config = self.getConfiguration()
-            dummyModeEnabled = tracker_config.get('enable_interface_without_connection', False)
-            host_pc_ip_address = tracker_config.get('network_settings', '100.1.1.1')
+            dummyModeEnabled = tracker_config.get(
+                "enable_interface_without_connection", False
+            )
+            host_pc_ip_address = tracker_config.get("network_settings", "100.1.1.1")
 
             if EyeTracker._eyelink is None:
                 if dummyModeEnabled:
@@ -264,13 +284,17 @@ class EyeTracker(EyeTrackerDevice):
                     if self._active_edf_file:
                         self._eyelink.closeDataFile()
                         # Note: local_file_path directory must exist or file will not be saved locally.
-                        local_file_path = os.path.join(self._local_edf_dir, self._active_edf_file)
-                        self._eyelink.receiveDataFile(self._host_edf_name + '.EDF', local_file_path)
+                        local_file_path = os.path.join(
+                            self._local_edf_dir, self._active_edf_file
+                        )
+                        self._eyelink.receiveDataFile(
+                            self._host_edf_name + ".EDF", local_file_path
+                        )
                     self._eyelink.close()
                     EyeTracker._active_edf_file = None
                     return EyeTrackerConstants.EYETRACKER_OK
             else:
-                print2err('INVALID_METHOD_ARGUMENT_VALUE')
+                print2err("INVALID_METHOD_ARGUMENT_VALUE")
         except Exception as e:
             printExceptionDetailsToStdErr()
 
@@ -317,14 +341,14 @@ class EyeTracker(EyeTrackerDevice):
             if key in EyeTracker._COMMAND_TO_FUNCTION:
                 return EyeTracker._COMMAND_TO_FUNCTION[key](*value)
             else:
-                cmdstr = ''
+                cmdstr = ""
                 if value is None:
-                    cmdstr = '{0}'.format(key)
+                    cmdstr = "{0}".format(key)
                 else:
-                    cmdstr = '{0} = {1}'.format(key, value)
+                    cmdstr = "{0} = {1}".format(key, value)
                 self._eyelink.sendCommand(cmdstr)
                 r = self._readResultFromTracker(cmdstr)
-                print2err('[%s] result: %s' % (cmdstr, r))
+                print2err("[%s] result: %s" % (cmdstr, r))
                 return EyeTrackerConstants.EYETRACKER_OK
         except Exception as e:
             printExceptionDetailsToStdErr()
@@ -340,12 +364,14 @@ class EyeTracker(EyeTrackerDevice):
         """
         try:
             if isinstance(message_contents, bytes):
-                message_contents = message_contents.decode('utf-8')
+                message_contents = message_contents.decode("utf-8")
 
             if time_offset:
-                r = self._eyelink.sendMessage('\t%d\t%s' % (time_offset, message_contents))
+                r = self._eyelink.sendMessage(
+                    "\t%d\t%s" % (time_offset, message_contents)
+                )
             else:
-                r = self._eyelink.sendMessage('%s' % message_contents)
+                r = self._eyelink.sendMessage("%s" % message_contents)
 
             if r == 0:
                 return EyeTrackerConstants.EYETRACKER_OK
@@ -357,25 +383,29 @@ class EyeTracker(EyeTrackerDevice):
     def sendCalibrationSettingsCommands(self, eyelink, calibration_config):
         if calibration_config:
             for cal_key, cal_val in calibration_config.items():
-                if cal_key == 'auto_pace':
+                if cal_key == "auto_pace":
                     if cal_val is True:
                         eyelink.enableAutoCalibration()
                     elif cal_val is False:
                         eyelink.disableAutoCalibration()
-                elif cal_key == 'pacing_speed' and cal_val:  # in seconds.msec
+                elif cal_key == "pacing_speed" and cal_val:  # in seconds.msec
                     eyelink.setAutoCalibrationPacing(int(cal_val * 1000))
-                elif cal_key == 'target_delay' and cal_val:  # in seconds.msec
+                elif cal_key == "target_delay" and cal_val:  # in seconds.msec
                     eyelink.setAutoCalibrationPacing(int(cal_val * 1000))
-                elif cal_key == 'randomize':
+                elif cal_key == "randomize":
                     if cal_val is True:
-                        self._eyelink.sendCommand('randomize_calibration_order = YES')
-                        self._eyelink.sendCommand('randomize_validation_order = YES')
+                        self._eyelink.sendCommand("randomize_calibration_order = YES")
+                        self._eyelink.sendCommand("randomize_validation_order = YES")
                     else:
-                        self._eyelink.sendCommand('randomize_calibration_order = NO')
-                        self._eyelink.sendCommand('randomize_validation_order = NO')
-                elif cal_key == 'type':
-                    VALID_CALIBRATION_TYPES = dict(THREE_POINTS='HV3', FIVE_POINTS='HV5', NINE_POINTS='HV9',
-                                                   THIRTEEN_POINTS='HV13')
+                        self._eyelink.sendCommand("randomize_calibration_order = NO")
+                        self._eyelink.sendCommand("randomize_validation_order = NO")
+                elif cal_key == "type":
+                    VALID_CALIBRATION_TYPES = dict(
+                        THREE_POINTS="HV3",
+                        FIVE_POINTS="HV5",
+                        NINE_POINTS="HV9",
+                        THIRTEEN_POINTS="HV13",
+                    )
                     eyelink.setCalibrationType(VALID_CALIBRATION_TYPES[cal_val])
 
     def runSetupProcedure(self, calibration_args={}):
@@ -392,7 +422,10 @@ class EyeTracker(EyeTrackerDevice):
         """
         try:
             from . import eyeLinkCoreGraphicsIOHubPsychopy
-            EyeLinkCoreGraphicsIOHubPsychopy = eyeLinkCoreGraphicsIOHubPsychopy.EyeLinkCoreGraphicsIOHubPsychopy
+
+            EyeLinkCoreGraphicsIOHubPsychopy = (
+                eyeLinkCoreGraphicsIOHubPsychopy.EyeLinkCoreGraphicsIOHubPsychopy
+            )
 
             already_recording = self.isRecordingEnabled()
             self.setRecordingState(False)
@@ -483,27 +516,31 @@ class EyeTracker(EyeTrackerDevice):
                 printExceptionDetailsToStdErr()
 
             if recording is True and not self.isRecordingEnabled():
-                starter_thread = threading.Thread(target=start_eyelink, args=(EyeTracker._eyelink,))
+                starter_thread = threading.Thread(
+                    target=start_eyelink, args=(EyeTracker._eyelink,)
+                )
                 stime = Computer.getTime()
                 starter_thread.start()
-                while starter_thread.is_alive() or Computer.getTime()-stime < 0.5:
+                while starter_thread.is_alive() or Computer.getTime() - stime < 0.5:
                     gevent.sleep(0.001)
                 starter_thread.join()
-                #print2err('start: ', Computer.getTime()-stime)
-                if Computer.platform == 'win32' and EyeTracker._keyboard:
+                # print2err('start: ', Computer.getTime()-stime)
+                if Computer.platform == "win32" and EyeTracker._keyboard:
                     EyeTracker._keyboard._syncPressedKeyState()
                 EyeTrackerDevice.enableEventReporting(self, True)
                 return self.isRecordingEnabled()
 
             elif recording is False and self.isRecordingEnabled():
-                stopper_thread = threading.Thread(target=stop_eyelink, args=(EyeTracker._eyelink,))
+                stopper_thread = threading.Thread(
+                    target=stop_eyelink, args=(EyeTracker._eyelink,)
+                )
                 stime = Computer.getTime()
                 stopper_thread.start()
-                while stopper_thread.is_alive() or Computer.getTime()-stime < 0.5:
+                while stopper_thread.is_alive() or Computer.getTime() - stime < 0.5:
                     gevent.sleep(0.001)
                 stopper_thread.join()
-                #print2err('stop: ', Computer.getTime() - stime)
-                if Computer.platform == 'win32' and EyeTracker._keyboard:
+                # print2err('stop: ', Computer.getTime() - stime)
+                if Computer.platform == "win32" and EyeTracker._keyboard:
                     EyeTracker._keyboard._syncPressedKeyState()
                 EyeTrackerDevice.enableEventReporting(self, False)
 
@@ -630,14 +667,20 @@ class EyeTracker(EyeTrackerDevice):
                         if leftHref[0] == pylink.MISSING_DATA:
                             leftHref = (0.0, 0.0)
 
-                        leftGaze = EyeTrackerConstants.UNDEFINED, EyeTrackerConstants.UNDEFINED
+                        leftGaze = (
+                            EyeTrackerConstants.UNDEFINED,
+                            EyeTrackerConstants.UNDEFINED,
+                        )
                         gx, gy = leftData.getGaze()
-                        if gx == pylink.MISSING_DATA or gy == pylink.MISSING_DATA or leftPupilSize == 0:
+                        if (
+                            gx == pylink.MISSING_DATA
+                            or gy == pylink.MISSING_DATA
+                            or leftPupilSize == 0
+                        ):
                             status = 20
                             leftPupilSize = 0
                         else:
-                            leftGaze = self._eyeTrackerToDisplayCoords(
-                                (gx, gy))
+                            leftGaze = self._eyeTrackerToDisplayCoords((gx, gy))
                             lastgaze = leftGaze
 
                         rightPupilSize = rightData.getPupilSize()
@@ -647,19 +690,28 @@ class EyeTracker(EyeTrackerDevice):
                             rightHref = (0.0, 0.0)  # [0]=0
                         if rightRawPupil[0] == pylink.MISSING_DATA:
                             rightRawPupil = (0.0, 0.0)
-                        rightGaze = EyeTrackerConstants.UNDEFINED, EyeTrackerConstants.UNDEFINED
+                        rightGaze = (
+                            EyeTrackerConstants.UNDEFINED,
+                            EyeTrackerConstants.UNDEFINED,
+                        )
                         gx, gy = rightData.getGaze()
-                        if gx == pylink.MISSING_DATA or gy == pylink.MISSING_DATA or rightPupilSize == 0:
+                        if (
+                            gx == pylink.MISSING_DATA
+                            or gy == pylink.MISSING_DATA
+                            or rightPupilSize == 0
+                        ):
                             status += 2
                             rightPupilSize = 0
                         else:
-                            rightGaze = self._eyeTrackerToDisplayCoords(
-                                (gx, gy))
+                            rightGaze = self._eyeTrackerToDisplayCoords((gx, gy))
 
                             if lastgaze is None:
                                 lastgaze = rightGaze
                             else:
-                                lastgaze = [lastgaze[0] + rightGaze[0], lastgaze[1] + rightGaze[1]]
+                                lastgaze = [
+                                    lastgaze[0] + rightGaze[0],
+                                    lastgaze[1] + rightGaze[1],
+                                ]
                                 lastgaze = lastgaze[0] / 2.0, lastgaze[1] / 2.0
 
                         self._latest_gaze_position = lastgaze
@@ -720,7 +772,7 @@ class EyeTracker(EyeTrackerDevice):
                             vel_x,
                             vel_y,
                             vel_xy,
-                            status
+                            status,
                         ]
 
                         self._latest_sample = binocSample
@@ -750,8 +802,15 @@ class EyeTracker(EyeTrackerDevice):
 
                         gx, gy = eyeData.getGaze()
                         status = 0
-                        if gx == pylink.MISSING_DATA or gy == pylink.MISSING_DATA or pupilSize == 0:
-                            gaze = EyeTrackerConstants.UNDEFINED, EyeTrackerConstants.UNDEFINED
+                        if (
+                            gx == pylink.MISSING_DATA
+                            or gy == pylink.MISSING_DATA
+                            or pupilSize == 0
+                        ):
+                            gaze = (
+                                EyeTrackerConstants.UNDEFINED,
+                                EyeTrackerConstants.UNDEFINED,
+                            )
                             status = 2
                             self._latest_gaze_position = None
                         else:
@@ -764,39 +823,40 @@ class EyeTracker(EyeTrackerDevice):
                         vel_y = 0
                         vel_xy = 0
 
-                        monoSample = [0,
-                                      0,
-                                      0,  # device id (not currently used)
-                                      Device._getNextEventID(),
-                                      event_type,
-                                      ne.event_timestamp,
-                                      ne.logged_time,
-                                      ne.timestamp,
-                                      confidenceInterval,
-                                      ne.event_delay,
-                                      0,
-                                      myeye,
-                                      gaze[0],
-                                      gaze[1],
-                                      EyeTrackerConstants.UNDEFINED,
-                                      EyeTrackerConstants.UNDEFINED,
-                                      EyeTrackerConstants.UNDEFINED,
-                                      EyeTrackerConstants.UNDEFINED,
-                                      href[0],
-                                      href[1],
-                                      rawPupil[0],
-                                      rawPupil[1],
-                                      pupilSize,
-                                      EyeTrackerConstants.PUPIL_AREA,
-                                      EyeTrackerConstants.UNDEFINED,
-                                      EyeTrackerConstants.UNDEFINED,
-                                      ppd[0],
-                                      ppd[1],
-                                      vel_x,
-                                      vel_y,
-                                      vel_xy,
-                                      status
-                                      ]
+                        monoSample = [
+                            0,
+                            0,
+                            0,  # device id (not currently used)
+                            Device._getNextEventID(),
+                            event_type,
+                            ne.event_timestamp,
+                            ne.logged_time,
+                            ne.timestamp,
+                            confidenceInterval,
+                            ne.event_delay,
+                            0,
+                            myeye,
+                            gaze[0],
+                            gaze[1],
+                            EyeTrackerConstants.UNDEFINED,
+                            EyeTrackerConstants.UNDEFINED,
+                            EyeTrackerConstants.UNDEFINED,
+                            EyeTrackerConstants.UNDEFINED,
+                            href[0],
+                            href[1],
+                            rawPupil[0],
+                            rawPupil[1],
+                            pupilSize,
+                            EyeTrackerConstants.PUPIL_AREA,
+                            EyeTrackerConstants.UNDEFINED,
+                            EyeTrackerConstants.UNDEFINED,
+                            ppd[0],
+                            ppd[1],
+                            vel_x,
+                            vel_y,
+                            vel_xy,
+                            status,
+                        ]
                         # EyeTracker._eventArrayLengths['MONOC_EYE_SAMPLE']=len(monoSample)
                         self._latest_sample = monoSample
                         self._addNativeEventToBuffer(monoSample)
@@ -828,80 +888,80 @@ class EyeTracker(EyeTrackerDevice):
                     e_vel = ne.getEndVelocity()
                     e_ppd = ne.getEndPPD()
 
-                    a_gaze = self._eyeTrackerToDisplayCoords(
-                        ne.getAverageGaze())
+                    a_gaze = self._eyeTrackerToDisplayCoords(ne.getAverageGaze())
                     a_href = ne.getAverageHREF()
                     a_pupilsize = ne.getAveragePupilSize()
                     a_vel = ne.getAverageVelocity()
 
                     peak_vel = ne.getPeakVelocity()
 
-                    fee = [0,
-                           0,
-                           0,  # device id (not currently used)
-                           Device._getNextEventID(),
-                           etype,
-                           ne.event_timestamp,
-                           ne.logged_time,
-                           ne.timestamp,
-                           confidenceInterval,
-                           ne.event_delay,
-                           0,
-                           which_eye,
-                           event_duration,
-                           s_gaze[0],
-                           s_gaze[1],
-                           EyeTrackerConstants.UNDEFINED,
-                           s_href[0],
-                           s_href[1],
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           s_pupilsize,
-                           EyeTrackerConstants.PUPIL_AREA,
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           s_ppd[0],
-                           s_ppd[1],
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           s_vel,
-                           e_gaze[0],
-                           e_gaze[1],
-                           EyeTrackerConstants.UNDEFINED,
-                           e_href[0],
-                           e_href[1],
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           e_pupilsize,
-                           EyeTrackerConstants.PUPIL_AREA,
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           e_ppd[0],
-                           e_ppd[1],
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           e_vel,
-                           a_gaze[0],
-                           a_gaze[1],
-                           EyeTrackerConstants.UNDEFINED,
-                           a_href[0],
-                           a_href[1],
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           a_pupilsize,
-                           EyeTrackerConstants.PUPIL_AREA,
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           a_vel,
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           peak_vel,
-                           estatus
-                           ]
+                    fee = [
+                        0,
+                        0,
+                        0,  # device id (not currently used)
+                        Device._getNextEventID(),
+                        etype,
+                        ne.event_timestamp,
+                        ne.logged_time,
+                        ne.timestamp,
+                        confidenceInterval,
+                        ne.event_delay,
+                        0,
+                        which_eye,
+                        event_duration,
+                        s_gaze[0],
+                        s_gaze[1],
+                        EyeTrackerConstants.UNDEFINED,
+                        s_href[0],
+                        s_href[1],
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        s_pupilsize,
+                        EyeTrackerConstants.PUPIL_AREA,
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        s_ppd[0],
+                        s_ppd[1],
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        s_vel,
+                        e_gaze[0],
+                        e_gaze[1],
+                        EyeTrackerConstants.UNDEFINED,
+                        e_href[0],
+                        e_href[1],
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        e_pupilsize,
+                        EyeTrackerConstants.PUPIL_AREA,
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        e_ppd[0],
+                        e_ppd[1],
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        e_vel,
+                        a_gaze[0],
+                        a_gaze[1],
+                        EyeTrackerConstants.UNDEFINED,
+                        a_href[0],
+                        a_href[1],
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        a_pupilsize,
+                        EyeTrackerConstants.PUPIL_AREA,
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        a_vel,
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        peak_vel,
+                        estatus,
+                    ]
                     # EyeTracker._eventArrayLengths['FIXATION_END']=len(fee)
                     self._addNativeEventToBuffer(fee)
 
@@ -938,62 +998,63 @@ class EyeTracker(EyeTrackerDevice):
                     a_vel = ne.getAverageVelocity()
                     peak_vel = ne.getPeakVelocity()
 
-                    see = [0,
-                           0,
-                           0,  # device id (not currently used)
-                           Device._getNextEventID(),
-                           etype,
-                           ne.event_timestamp,
-                           ne.logged_time,
-                           ne.timestamp,
-                           confidenceInterval,
-                           ne.event_delay,
-                           0,
-                           which_eye,
-                           event_duration,
-                           e_amp[0],
-                           e_amp[1],
-                           e_angle,
-                           s_gaze[0],
-                           s_gaze[1],
-                           EyeTrackerConstants.UNDEFINED,
-                           s_href[0],
-                           s_href[1],
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           s_pupilsize,
-                           EyeTrackerConstants.PUPIL_AREA,
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           s_ppd[0],
-                           s_ppd[1],
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           s_vel,
-                           e_gaze[0],
-                           e_gaze[1],
-                           EyeTrackerConstants.UNDEFINED,
-                           e_href[0],
-                           e_href[1],
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           e_pupilsize,
-                           EyeTrackerConstants.PUPIL_AREA,
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           e_ppd[0],
-                           e_ppd[1],
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           e_vel,
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           a_vel,
-                           EyeTrackerConstants.UNDEFINED,
-                           EyeTrackerConstants.UNDEFINED,
-                           peak_vel,
-                           estatus
-                           ]
+                    see = [
+                        0,
+                        0,
+                        0,  # device id (not currently used)
+                        Device._getNextEventID(),
+                        etype,
+                        ne.event_timestamp,
+                        ne.logged_time,
+                        ne.timestamp,
+                        confidenceInterval,
+                        ne.event_delay,
+                        0,
+                        which_eye,
+                        event_duration,
+                        e_amp[0],
+                        e_amp[1],
+                        e_angle,
+                        s_gaze[0],
+                        s_gaze[1],
+                        EyeTrackerConstants.UNDEFINED,
+                        s_href[0],
+                        s_href[1],
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        s_pupilsize,
+                        EyeTrackerConstants.PUPIL_AREA,
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        s_ppd[0],
+                        s_ppd[1],
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        s_vel,
+                        e_gaze[0],
+                        e_gaze[1],
+                        EyeTrackerConstants.UNDEFINED,
+                        e_href[0],
+                        e_href[1],
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        e_pupilsize,
+                        EyeTrackerConstants.PUPIL_AREA,
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        e_ppd[0],
+                        e_ppd[1],
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        e_vel,
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        a_vel,
+                        EyeTrackerConstants.UNDEFINED,
+                        EyeTrackerConstants.UNDEFINED,
+                        peak_vel,
+                        estatus,
+                    ]
                     self._addNativeEventToBuffer(see)
                 elif isinstance(ne, pylink.EndBlinkEvent):
                     etype = EventConstants.BLINK_END
@@ -1024,12 +1085,14 @@ class EyeTracker(EyeTrackerDevice):
                         0,
                         which_eye,
                         event_duration,
-                        estatus
+                        estatus,
                     ]
 
                     self._addNativeEventToBuffer(bee)
 
-                elif isinstance(ne, pylink.StartFixationEvent) or isinstance(ne, pylink.StartSaccadeEvent):
+                elif isinstance(ne, pylink.StartFixationEvent) or isinstance(
+                    ne, pylink.StartSaccadeEvent
+                ):
                     etype = EventConstants.FIXATION_START
 
                     if isinstance(ne, pylink.StartSaccadeEvent):
@@ -1080,7 +1143,7 @@ class EyeTracker(EyeTrackerDevice):
                         EyeTrackerConstants.UNDEFINED,  # velocity x
                         EyeTrackerConstants.UNDEFINED,  # velocity y
                         velocity,  # velocity xy
-                        estatus  # status
+                        estatus,  # status
                     ]
 
                     self._addNativeEventToBuffer(se)
@@ -1109,13 +1172,13 @@ class EyeTracker(EyeTrackerDevice):
                         ne.event_delay,
                         0,
                         which_eye,
-                        estatus
+                        estatus,
                     ]
 
                     self._addNativeEventToBuffer(bse)
 
         except Exception:
-            print2err('ERROR occurred during poll:')
+            print2err("ERROR occurred during poll:")
             printExceptionDetailsToStdErr()
 
     def _eyeTrackerToDisplayCoords(self, eyetracker_point):
@@ -1141,8 +1204,7 @@ class EyeTracker(EyeTrackerDevice):
             dl, dt, dr, db = self._display_device.getBounds()
             dw, dh = dr - dl, db - dt
 
-            cxn, cyn = (display_x + cw / 2) / cw, 1.0 - \
-                       (display_y - ch / 2) / ch
+            cxn, cyn = (display_x + cw / 2) / cw, 1.0 - (display_y - ch / 2) / ch
             return cxn * dw, cyn * dh
 
         except Exception as e:
@@ -1150,45 +1212,52 @@ class EyeTracker(EyeTrackerDevice):
 
     def _setRuntimeSettings(self, runtimeSettings):
         for pkey, v in runtimeSettings.items():
-            if pkey == 'sample_filtering':
-                all_filters = {'FILTER_FILE': 'FILTER_LEVEL_2',
-                               'FILTER_ONLINE': 'FILTER_LEVEL_OFF'}
-                if str(v) in ('FILTER_OFF', 'FILTER_LEVEL_OFF', 'FILTER_LEVEL_1', 'FILTER_LEVEL_2'):
-                    vd = {u'FILTER_ALL': str(v)}
+            if pkey == "sample_filtering":
+                all_filters = {
+                    "FILTER_FILE": "FILTER_LEVEL_2",
+                    "FILTER_ONLINE": "FILTER_LEVEL_OFF",
+                }
+                if str(v) in (
+                    "FILTER_OFF",
+                    "FILTER_LEVEL_OFF",
+                    "FILTER_LEVEL_1",
+                    "FILTER_LEVEL_2",
+                ):
+                    vd = {"FILTER_ALL": str(v)}
                     v = vd
 
                 fkeys = [str(k) for k in v]
-                if 'FILTER_ALL' in fkeys:
+                if "FILTER_ALL" in fkeys:
                     for k in all_filters:
-                        all_filters[k] = str(v[u'FILTER_ALL'])
+                        all_filters[k] = str(v["FILTER_ALL"])
                 else:
                     for k in fkeys:
                         if k in all_filters:
                             all_filters[k] = str(v[k])
                 self._setSampleFilterLevel(all_filters)
-            elif pkey == 'sampling_rate':
+            elif pkey == "sampling_rate":
                 self._setSamplingRate(v)
-            elif pkey == 'track_eyes':
+            elif pkey == "track_eyes":
                 self._setEyesToTrack(v)
-            elif pkey == 'vog_settings':
+            elif pkey == "vog_settings":
                 for vog_key, vog_val in v.items():
-                    if vog_key == 'pupil_measure_types':
+                    if vog_key == "pupil_measure_types":
                         self._eyelink.sendCommand(
-                            'pupil_size_diameter = %s' %
-                            (vog_val.split('_')[1]))
-                    elif vog_key == 'pupil_center_algorithm':
+                            "pupil_size_diameter = %s" % (vog_val.split("_")[1])
+                        )
+                    elif vog_key == "pupil_center_algorithm":
                         self._setPupilDetection(vog_val)
-                    elif vog_key == 'tracking_mode':
+                    elif vog_key == "tracking_mode":
                         self._setEyeTrackingMode(vog_val)
                     else:
                         print2err(
-                            'WARNING: unhandled eye tracker config setting ( in sub group vog_settings):',
+                            "WARNING: unhandled eye tracker config setting ( in sub group vog_settings):",
                             vog_key,
-                            vog_val)
-                        print2err('')
+                            vog_val,
+                        )
+                        print2err("")
             else:
-                print2err(
-                    'WARNING: unhandled eye tracker config setting:', pkey, v)
+                print2err("WARNING: unhandled eye tracker config setting:", pkey, v)
 
     def _fileTransferProgressUpdate(self, size, received):
         if ProgressBarDialog is None:
@@ -1197,9 +1266,14 @@ class EyeTracker(EyeTrackerDevice):
 
         if EyeTracker._file_transfer_progress_dialog is None:
             EyeTracker._file_transfer_progress_dialog = ProgressBarDialog(
-                'ioHub EyeLink(C) Interface',
-                'Transferring  ' + self._full_edf_name + '.EDF to ' + self._local_edf_dir,
-                100, display_index=self._display_device.getIndex())
+                "ioHub EyeLink(C) Interface",
+                "Transferring  "
+                + self._full_edf_name
+                + ".EDF to "
+                + self._local_edf_dir,
+                100,
+                display_index=self._display_device.getIndex(),
+            )
         elif received >= size and EyeTracker._file_transfer_progress_dialog:
             EyeTracker._file_transfer_progress_dialog.close()
             EyeTracker._file_transfer_progress_dialog = None
@@ -1220,72 +1294,81 @@ class EyeTracker(EyeTrackerDevice):
 
             if track_eyes is None:
                 print2err(
-                    '** Warning: UNKNOWN EYE CONSTANT, SETTING EYE TO TRACK TO RIGHT. UNKNOWN EYE CONSTANT: ',
-                    track_eyes)
-                track_eyes = 'RIGHT'
+                    "** Warning: UNKNOWN EYE CONSTANT, SETTING EYE TO TRACK TO RIGHT. UNKNOWN EYE CONSTANT: ",
+                    track_eyes,
+                )
+                track_eyes = "RIGHT"
             if track_eyes in [
-                'RIGHT', EyeTrackerConstants.getName(
-                    EyeTrackerConstants.RIGHT_EYE)]:
-                track_eyes = 'RIGHT'
-            elif track_eyes in ['LEFT', EyeTrackerConstants.getName(EyeTrackerConstants.LEFT_EYE)]:
-                track_eyes = 'LEFT'
-            elif track_eyes in ['BOTH', EyeTrackerConstants.getName(EyeTrackerConstants.BINOCULAR)]:
-                track_eyes = 'BOTH'
+                "RIGHT",
+                EyeTrackerConstants.getName(EyeTrackerConstants.RIGHT_EYE),
+            ]:
+                track_eyes = "RIGHT"
+            elif track_eyes in [
+                "LEFT",
+                EyeTrackerConstants.getName(EyeTrackerConstants.LEFT_EYE),
+            ]:
+                track_eyes = "LEFT"
+            elif track_eyes in [
+                "BOTH",
+                EyeTrackerConstants.getName(EyeTrackerConstants.BINOCULAR),
+            ]:
+                track_eyes = "BOTH"
             else:
                 print2err(
-                    '** Warning: UNKNOWN EYE CONSTANT, SETTING EYE TO TRACK TO RIGHT. UNKNOWN EYE CONSTANT: ',
-                    track_eyes)
-                track_eyes = 'RIGHT'
+                    "** Warning: UNKNOWN EYE CONSTANT, SETTING EYE TO TRACK TO RIGHT. UNKNOWN EYE CONSTANT: ",
+                    track_eyes,
+                )
+                track_eyes = "RIGHT"
 
             srate = self._getSamplingRate()
-            self._eyelink.sendCommand('lock_active_eye = NO')
-            if track_eyes == 'BOTH':
+            self._eyelink.sendCommand("lock_active_eye = NO")
+            if track_eyes == "BOTH":
                 if self._eyelink.getTrackerVersion() == 3:
                     trackerVersion = self._eyelink.getTrackerVersionString().strip()
-                    trackerVersion = trackerVersion.split(' ')
+                    trackerVersion = trackerVersion.split(" ")
                     tv = float(trackerVersion[len(trackerVersion) - 1])
                     if tv <= 3:
                         if srate > 500:
                             print2err(
-                                'ERROR: setEyesToTrack: Selected sample rate is not supported in binocular mode')
+                                "ERROR: setEyesToTrack: Selected sample rate is not supported in binocular mode"
+                            )
                             return EyeTrackerConstants.EYETRACKER_ERROR
                         else:
-                            self._eyelink.sendCommand(
-                                'binocular_enabled = YES')
+                            self._eyelink.sendCommand("binocular_enabled = YES")
                             return EyeTrackerConstants.EYETRACKER_OK
                     else:
                         rts = []
-                        modes = self._readResultFromTracker(
-                            'read_mode_list')
-                        if modes is None or modes.strip() == 'Unknown Variable Name':
+                        modes = self._readResultFromTracker("read_mode_list")
+                        if modes is None or modes.strip() == "Unknown Variable Name":
                             print2err(
-                                'ERROR: setEyesToTrack: Failed to get supported modes. ')
+                                "ERROR: setEyesToTrack: Failed to get supported modes. "
+                            )
                             return EyeTrackerConstants.EYETRACKER_ERROR
                         modes = modes.strip().split()
                         # print2err('EL Modes: ', modes)
                         for x in modes:
-                            if x[-1] == 'B':
-                                x = int(x.replace('B', ' ').strip())
+                            if x[-1] == "B":
+                                x = int(x.replace("B", " ").strip())
                                 rts.append(x)
                         # print2err('EL srate: ', srate)
                         # print2err('EL rts: ', rts)
                         if srate in rts:
-                            self._eyelink.sendCommand(
-                                'binocular_enabled = YES')
+                            self._eyelink.sendCommand("binocular_enabled = YES")
                             return True
                         else:
                             print2err(
-                                'ERROR: setEyesToTrack: Selected sample rate is not supported!')
+                                "ERROR: setEyesToTrack: Selected sample rate is not supported!"
+                            )
                             return EyeTrackerConstants.EYETRACKER_ERROR
             else:
-                self._eyelink.sendCommand('binocular_enabled = NO')
+                self._eyelink.sendCommand("binocular_enabled = NO")
                 # Following command fails on el1000+
                 # self._eyelink.sendCommand('current_camera = %s' % (track_eyes))
-                self._eyelink.sendCommand('active_eye = %s' % (track_eyes))
-                self._eyelink.sendCommand('lock_active_eye = YES')
+                self._eyelink.sendCommand("active_eye = %s" % (track_eyes))
+                self._eyelink.sendCommand("lock_active_eye = YES")
                 return EyeTrackerConstants.EYETRACKER_OK
         except Exception:
-            print2err('EYELINK Error during _setEyesToTrack:')
+            print2err("EYELINK Error during _setEyesToTrack:")
             printExceptionDetailsToStdErr()
             return EyeTrackerConstants.EYETRACKER_ERROR
 
@@ -1297,50 +1380,48 @@ class EyeTracker(EyeTrackerDevice):
                 tracker_version = self._eyelink.getTrackerVersion()
                 if tracker_version < 3:
                     # eyelink II
-                    self._eyelink.sendCommand(
-                        'use_high_speed %d' %
-                        (srate == 500))
+                    self._eyelink.sendCommand("use_high_speed %d" % (srate == 500))
                 else:
                     trackerVersion = self._eyelink.getTrackerVersionString().strip()
-                    trackerVersion = trackerVersion.split(' ')
+                    trackerVersion = trackerVersion.split(" ")
                     tv = float(trackerVersion[len(trackerVersion) - 1])
 
                     if tv > 3:
                         # EyeLink 2000
                         rts = []
-                        modes = self._readResultFromTracker('read_mode_list')
-                        if modes is None or modes.strip() == 'Unknown Variable Name':
+                        modes = self._readResultFromTracker("read_mode_list")
+                        if modes is None or modes.strip() == "Unknown Variable Name":
                             print2err(
-                                'IOHUB_DEVICE_EXCEPTION.Error: Could not retrieve sample rate modes from EyeLink Host.',
-                                ' EyeTracker.setSamplingRate ',
-                                str(modes))
+                                "IOHUB_DEVICE_EXCEPTION.Error: Could not retrieve sample rate modes from EyeLink Host.",
+                                " EyeTracker.setSamplingRate ",
+                                str(modes),
+                            )
                         else:
                             modes = modes.strip().split()
 
                             # ioHub.print2err("Modes = ", modes)
                             for x in modes:
-                                m = x.replace('B', ' ').strip()
-                                m = m.replace('R', ' ').strip()
+                                m = x.replace("B", " ").strip()
+                                m = m.replace("R", " ").strip()
                                 x = int(m)
                                 rts.append(x)
                             if srate in rts:
-                                self._eyelink.sendCommand(
-                                    'sample_rate = %d' % srate)
+                                self._eyelink.sendCommand("sample_rate = %d" % srate)
                     else:
                         if srate <= 1000:
-                            self.sendCommand('sample_rate = %d' % srate)
+                            self.sendCommand("sample_rate = %d" % srate)
                 return self._getSamplingRate()
             return EyeTrackerConstants.EYETRACKER_ERROR
         except Exception:
-            print2err('EYELINK Error during _setSamplingRate:')
+            print2err("EYELINK Error during _setSamplingRate:")
             printExceptionDetailsToStdErr()
             return EyeTrackerConstants.EYETRACKER_ERROR
 
     def _setSampleFilterLevel(self, filter_settings_dict):
         """"""
         try:
-            lfilter = EyeTrackerConstants.getID(filter_settings_dict['FILTER_ONLINE'])
-            ffilter = EyeTrackerConstants.getID(filter_settings_dict['FILTER_FILE'])
+            lfilter = EyeTrackerConstants.getID(filter_settings_dict["FILTER_ONLINE"])
+            ffilter = EyeTrackerConstants.getID(filter_settings_dict["FILTER_FILE"])
             if lfilter is None:
                 lfilter = 0
             if ffilter is None:
@@ -1348,7 +1429,9 @@ class EyeTracker(EyeTrackerDevice):
             self._eyelink.setHeuristicLinkAndFileFilter(lfilter, ffilter)
             return EyeTrackerConstants.EYETRACKER_OK
         except Exception:
-            print2err('EYELINK Error during _setSampleFilterLevel: ', filter_settings_dict)
+            print2err(
+                "EYELINK Error during _setSampleFilterLevel: ", filter_settings_dict
+            )
             printExceptionDetailsToStdErr()
             return EyeTrackerConstants.EYETRACKER_ERROR
 
@@ -1357,32 +1440,39 @@ class EyeTracker(EyeTrackerDevice):
             eyelink = self._eyelink
 
             # eye to screen distance
-            sdist = self._display_device.getConfiguration().get('default_eye_distance', None)
+            sdist = self._display_device.getConfiguration().get(
+                "default_eye_distance", None
+            )
             if sdist:
-                if 'surface_center' in sdist:
+                if "surface_center" in sdist:
                     eyelink.sendCommand(
-                        'screen_distance = %d ' %
-                        (sdist['surface_center'],))
+                        "screen_distance = %d " % (sdist["surface_center"],)
+                    )
             else:
                 print2err(
-                    'ERROR: "default_eye_distance":"surface_center" value could not be read from monitor settings')
+                    'ERROR: "default_eye_distance":"surface_center" value could not be read from monitor settings'
+                )
                 return False
 
             # screen_phys_coords
-            sdim = self._display_device.getConfiguration().get('physical_dimensions', None)
+            sdim = self._display_device.getConfiguration().get(
+                "physical_dimensions", None
+            )
             if sdim:
-                if 'width' in sdim and 'height' in sdim:
-                    sw = sdim['width']
-                    sh = sdim['height']
+                if "width" in sdim and "height" in sdim:
+                    sw = sdim["width"]
+                    sh = sdim["height"]
                     hsw = sw / 2.0
                     hsh = sh / 2.0
 
                     eyelink.sendCommand(
-                        'screen_phys_coords = -%.3f, %.3f, %.3f, -%.3f' %
-                        (hsw, hsh, hsw, hsh))
+                        "screen_phys_coords = -%.3f, %.3f, %.3f, -%.3f"
+                        % (hsw, hsh, hsw, hsh)
+                    )
             else:
                 print2err(
-                    'ERROR: "physical_stimudisplay_x,display_ylus_area":"width" or "height" value could not be read from monitor settings')
+                    'ERROR: "physical_stimudisplay_x,display_ylus_area":"width" or "height" value could not be read from monitor settings'
+                )
                 return False
 
             # calibration coord space
@@ -1390,17 +1480,15 @@ class EyeTracker(EyeTrackerDevice):
             w = r - l
             h = b - t
             eyelink.sendCommand(
-                'screen_pixel_coords %.2f %.2f %.2f %.2f' %
-                (0, 0, w, h))
-            eyelink.sendMessage(
-                'DISPLAY_COORDS  %.2f %.2f %.2f %.2f' %
-                (0, 0, w, h))
+                "screen_pixel_coords %.2f %.2f %.2f %.2f" % (0, 0, w, h)
+            )
+            eyelink.sendMessage("DISPLAY_COORDS  %.2f %.2f %.2f %.2f" % (0, 0, w, h))
 
             # bug in pylink makes this not work; must use default setting of 10
             # eyelink.sendCommand("screen_write_prescale = 100")
 
         except Exception:
-            print2err('EYELINK Error during _eyelinkSetScreenPhysicalData:')
+            print2err("EYELINK Error during _eyelinkSetScreenPhysicalData:")
             printExceptionDetailsToStdErr()
             return EyeTrackerConstants.EYETRACKER_ERROR
 
@@ -1411,13 +1499,14 @@ class EyeTracker(EyeTrackerDevice):
 
             if eyelink_ver == 3:
                 tvstr = self._eyelink.getTrackerVersionString()
-                vindex = tvstr.find('EYELINK CL')
+                vindex = tvstr.find("EYELINK CL")
                 tracker_software_ver = int(
-                    float(tvstr[(vindex + len('EYELINK CL')):].strip()))
+                    float(tvstr[(vindex + len("EYELINK CL")) :].strip())
+                )
 
             return eyelink_ver, tracker_software_ver
         except Exception:
-            print2err('EYELINK Error during _eyeLinkHardwareAndSoftwareVersion:')
+            print2err("EYELINK Error during _eyeLinkHardwareAndSoftwareVersion:")
             printExceptionDetailsToStdErr()
             return EyeTrackerConstants.EYETRACKER_ERROR
 
@@ -1429,48 +1518,57 @@ class EyeTracker(EyeTrackerDevice):
 
             # set EDF file contents
             eyelink.sendCommand(
-                'file_event_filter = LEFT, RIGHT, FIXATION, SACCADE, BLINK, MESSAGE, BUTTON, INPUT')
+                "file_event_filter = LEFT, RIGHT, FIXATION, SACCADE, BLINK, MESSAGE, BUTTON, INPUT"
+            )
             eyelink.sendCommand(
-                'file_event_data = GAZE , GAZERES , HREF , AREA  , VELOCITY , STATUS')
+                "file_event_data = GAZE , GAZERES , HREF , AREA  , VELOCITY , STATUS"
+            )
 
             if eyelink_sw_ver >= 4:
                 eyelink.sendCommand(
-                    'file_sample_data = GAZE, GAZERES, HREF , PUPIL , AREA ,STATUS, BUTTON, INPUT, HTARGET')
+                    "file_sample_data = GAZE, GAZERES, HREF , PUPIL , AREA ,STATUS, BUTTON, INPUT, HTARGET"
+                )
             else:
                 eyelink.sendCommand(
-                    'file_sample_data = GAZE, GAZERES, HREF , PUPIL , AREA ,STATUS, BUTTON, INPUT')
+                    "file_sample_data = GAZE, GAZERES, HREF , PUPIL , AREA ,STATUS, BUTTON, INPUT"
+                )
 
             # set link data
             eyelink.sendCommand(
-                'link_event_filter = LEFT, RIGHT, FIXATION, SACCADE , BLINK, BUTTON, MESSAGE, INPUT')
+                "link_event_filter = LEFT, RIGHT, FIXATION, SACCADE , BLINK, BUTTON, MESSAGE, INPUT"
+            )
             eyelink.sendCommand(
-                'link_event_data = GAZE, GAZERES, HREF , AREA, VELOCITY, STATUS')
+                "link_event_data = GAZE, GAZERES, HREF , AREA, VELOCITY, STATUS"
+            )
 
             if eyelink_sw_ver >= 4:
                 eyelink.sendCommand(
-                    'link_sample_data = GAZE, GAZERES, HREF , PUPIL , AREA ,STATUS, BUTTON, INPUT , HTARGET')
+                    "link_sample_data = GAZE, GAZERES, HREF , PUPIL , AREA ,STATUS, BUTTON, INPUT , HTARGET"
+                )
             else:
                 eyelink.sendCommand(
-                    'link_sample_data = GAZE, GAZERES, HREF , PUPIL , AREA ,STATUS, BUTTON, INPUT')
+                    "link_sample_data = GAZE, GAZERES, HREF , PUPIL , AREA ,STATUS, BUTTON, INPUT"
+                )
         except Exception:
-            print2err('EYELINK Error during _eyelinkSetLinkAndFileContents:')
+            print2err("EYELINK Error during _eyelinkSetLinkAndFileContents:")
             printExceptionDetailsToStdErr()
             return EyeTrackerConstants.EYETRACKER_ERROR
 
     def _addCommandFunctions(self):
         try:
-            self._COMMAND_TO_FUNCTION['getTrackerMode'] = _getTrackerMode
-            self._COMMAND_TO_FUNCTION['doDriftCorrect'] = _doDriftCorrect
-            self._COMMAND_TO_FUNCTION['eyeAvailable'] = _eyeAvailable
-            self._COMMAND_TO_FUNCTION['enableDummyOpen'] = _dummyOpen
-            self._COMMAND_TO_FUNCTION['getLastCalibrationInfo'] = _getCalibrationMessage
-            self._COMMAND_TO_FUNCTION['applyDriftCorrect'] = _applyDriftCorrect
-            self._COMMAND_TO_FUNCTION['setIPAddress'] = _setIPAddress
-            self._COMMAND_TO_FUNCTION['setLockEye'] = _setLockEye
+            self._COMMAND_TO_FUNCTION["getTrackerMode"] = _getTrackerMode
+            self._COMMAND_TO_FUNCTION["doDriftCorrect"] = _doDriftCorrect
+            self._COMMAND_TO_FUNCTION["eyeAvailable"] = _eyeAvailable
+            self._COMMAND_TO_FUNCTION["enableDummyOpen"] = _dummyOpen
+            self._COMMAND_TO_FUNCTION["getLastCalibrationInfo"] = _getCalibrationMessage
+            self._COMMAND_TO_FUNCTION["applyDriftCorrect"] = _applyDriftCorrect
+            self._COMMAND_TO_FUNCTION["setIPAddress"] = _setIPAddress
+            self._COMMAND_TO_FUNCTION["setLockEye"] = _setLockEye
             self._COMMAND_TO_FUNCTION[
-                'setLocalResultsDir'] = _setNativeRecordingFileSaveDir
+                "setLocalResultsDir"
+            ] = _setNativeRecordingFileSaveDir
         except Exception:
-            print2err('EYELINK Error during _addCommandFunctions:')
+            print2err("EYELINK Error during _addCommandFunctions:")
             printExceptionDetailsToStdErr()
             return EyeTrackerConstants.EYETRACKER_ERROR
 
@@ -1480,63 +1578,66 @@ class EyeTracker(EyeTrackerDevice):
 
             t = pylink.currentTime()
             # Waits for a maximum of timeout msec
-            while (pylink.currentTime() - t < timeout):
+            while pylink.currentTime() - t < timeout:
                 rv = self._eyelink.readReply()
                 if rv and len(rv) > 0:
                     return rv
             return None
         except Exception:
-            print2err('EYELINK Error during _readResultFromTracker:')
+            print2err("EYELINK Error during _readResultFromTracker:")
             printExceptionDetailsToStdErr()
             return EyeTrackerConstants.EYETRACKER_ERROR
 
     def _setPupilDetection(self, pmode):
         try:
-            if (pmode.upper() == 'ELLIPSE_FIT'):
-                self._eyelink.sendCommand('use_ellipse_fitter = YES')
-            elif (pmode.upper() == 'CENTROID_FIT'):
-                self._eyelink.sendCommand('force_ellipse_fitter -1')
-                self._eyelink.sendCommand('use_ellipse_fitter = NO')
+            if pmode.upper() == "ELLIPSE_FIT":
+                self._eyelink.sendCommand("use_ellipse_fitter = YES")
+            elif pmode.upper() == "CENTROID_FIT":
+                self._eyelink.sendCommand("force_ellipse_fitter -1")
+                self._eyelink.sendCommand("use_ellipse_fitter = NO")
             else:
                 print2err(
-                    '** EyeLink Warning: _setPupilDetection: Unrecofnized pupil fitting type: ',
-                    pmode)
+                    "** EyeLink Warning: _setPupilDetection: Unrecofnized pupil fitting type: ",
+                    pmode,
+                )
                 return EyeTrackerConstants.EYETRACKER_ERROR
             return EyeTrackerConstants.EYETRACKER_OK
         except Exception:
-            print2err('EYELINK Error during _setPupilDetection:')
+            print2err("EYELINK Error during _setPupilDetection:")
             printExceptionDetailsToStdErr()
             return EyeTrackerConstants.EYETRACKER_ERROR
 
     def _getPupilDetectionModel(self):
         try:
-            v = self._readResultFromTracker('use_ellipse_fitter')
-            if v != '0':
-                return 'ELLIPSE'
+            v = self._readResultFromTracker("use_ellipse_fitter")
+            if v != "0":
+                return "ELLIPSE"
             else:
-                return 'CENTROID'
+                return "CENTROID"
         except Exception:
-            print2err('EYELINK Error during _getPupilDetectionModel:')
+            print2err("EYELINK Error during _getPupilDetectionModel:")
             printExceptionDetailsToStdErr()
             return EyeTrackerConstants.EYETRACKER_ERROR
 
     def _setEyeTrackingMode(self, r=-1):
         try:
-            if r == 'PUPIL_CR_TRACKING':
+            if r == "PUPIL_CR_TRACKING":
                 r = 1
-            elif r == 'PUPIL_ONLY_TRACKING':
+            elif r == "PUPIL_ONLY_TRACKING":
                 r = 0
             else:
                 print2err(
-                    'EYELINK Error during _setEyeTrackingMode: Unknown Trackiong Mode: ', r)
+                    "EYELINK Error during _setEyeTrackingMode: Unknown Trackiong Mode: ",
+                    r,
+                )
                 return EyeTrackerConstants.EYETRACKER_ERROR
             if r == 0:
-                self._eyelink.sendCommand('force_corneal_reflection = OFF')
-            self._eyelink.sendCommand('corneal_mode %d' % (r))
+                self._eyelink.sendCommand("force_corneal_reflection = OFF")
+            self._eyelink.sendCommand("corneal_mode %d" % (r))
             return EyeTrackerConstants.EYETRACKER_OK
 
         except Exception:
-            print2err('EYELINK Error during _setEyeTrackingMode:')
+            print2err("EYELINK Error during _setEyeTrackingMode:")
             printExceptionDetailsToStdErr()
             return EyeTrackerConstants.EYETRACKER_ERROR
 
@@ -1546,12 +1647,12 @@ class EyeTracker(EyeTrackerDevice):
             if self.isConnected():
                 srate = self._eyelink.getSampleRate()
                 if srate is None or srate < 0:
-                    srate = self._readResultFromTracker('sample_rate', 5)
+                    srate = self._readResultFromTracker("sample_rate", 5)
                 if srate:
                     return int(srate)
             return EyeTrackerConstants.EYETRACKER_ERROR
         except Exception:
-            print2err('EYELINK Error during _getSamplingRate:')
+            print2err("EYELINK Error during _getSamplingRate:")
             printExceptionDetailsToStdErr()
             return EyeTrackerConstants.EYETRACKER_ERROR
 
@@ -1559,26 +1660,26 @@ class EyeTracker(EyeTrackerDevice):
 # ================= Command Functions ==========================================
 
 _EYELINK_HOST_MODES = {
-    'EL_IDLE_MODE': 1,
-    'EL_IMAGE_MODE': 2,
-    'EL_SETUP_MENU_MODE': 3,
-    'EL_USER_MENU_1': 5,
-    'EL_USER_MENU_2': 6,
-    'EL_USER_MENU_3': 7,
-    'EL_OPTIONS_MENU_MODE': 8,
-    'EL_OUTPUT_MENU_MODE': 9,
-    'EL_DEMO_MENU_MODE': 10,
-    'EL_CALIBRATE_MODE': 11,
-    'EL_VALIDATE_MODE': 12,
-    'EL_DRIFT_CORR_MODE': 13,
-    'EL_RECORD_MODE': 14,
+    "EL_IDLE_MODE": 1,
+    "EL_IMAGE_MODE": 2,
+    "EL_SETUP_MENU_MODE": 3,
+    "EL_USER_MENU_1": 5,
+    "EL_USER_MENU_2": 6,
+    "EL_USER_MENU_3": 7,
+    "EL_OPTIONS_MENU_MODE": 8,
+    "EL_OUTPUT_MENU_MODE": 9,
+    "EL_DEMO_MENU_MODE": 10,
+    "EL_CALIBRATE_MODE": 11,
+    "EL_VALIDATE_MODE": 12,
+    "EL_DRIFT_CORR_MODE": 13,
+    "EL_RECORD_MODE": 14,
 }
 
 _eyeLinkCalibrationResultDict = dict()
-_eyeLinkCalibrationResultDict[-1] = 'OPERATION_FAILED'
-_eyeLinkCalibrationResultDict[0] = 'OPERATION_FAILED'
-_eyeLinkCalibrationResultDict[1] = 'OK_RESULT'
-_eyeLinkCalibrationResultDict[27] = 'ABORTED_BY_USER'
+_eyeLinkCalibrationResultDict[-1] = "OPERATION_FAILED"
+_eyeLinkCalibrationResultDict[0] = "OPERATION_FAILED"
+_eyeLinkCalibrationResultDict[1] = "OK_RESULT"
+_eyeLinkCalibrationResultDict[27] = "ABORTED_BY_USER"
 
 if 1 not in _EYELINK_HOST_MODES:
     t = dict(_EYELINK_HOST_MODES)
@@ -1601,7 +1702,7 @@ def _doDriftCorrect(*args, **kwargs):
             r = pylink.getEYELINK().doDriftCorrect(x, y, draw, allow_setup)
             return r
         else:
-            print2err('doDriftCorrect requires 4 parameters, received: ', args)
+            print2err("doDriftCorrect requires 4 parameters, received: ", args)
             return False
     except Exception as e:
         printExceptionDetailsToStdErr()
@@ -1613,7 +1714,7 @@ def _applyDriftCorrect():
         if r == 0:
             return True
         else:
-            return ['EYE_TRACKER_ERROR', 'applyDriftCorrect', r]
+            return ["EYE_TRACKER_ERROR", "applyDriftCorrect", r]
     except Exception as e:
         printExceptionDetailsToStdErr()
 
@@ -1648,7 +1749,7 @@ def _getCalibrationMessage(*args, **kwargs):
         if r in _eyeLinkCalibrationResultDict:
             r = _eyeLinkCalibrationResultDict[r]
         else:
-            r = 'NO_REPLY'
+            r = "NO_REPLY"
         return dict(message=m, result=r)
     except Exception as e:
         printExceptionDetailsToStdErr()
@@ -1661,10 +1762,7 @@ def _setIPAddress(*args, **kwargs):
             r = pylink.getEYELINK().setAddress(ipString)
             if r == 0:
                 return True
-        return [
-            'EYE_TRACKER_ERROR',
-            'setIPAddress',
-            'Could not Parse IP String']
+        return ["EYE_TRACKER_ERROR", "setIPAddress", "Could not Parse IP String"]
     except Exception as e:
         printExceptionDetailsToStdErr()
 
@@ -1673,10 +1771,15 @@ def _setLockEye(*args, **kwargs):
     try:
         if len(args) == 1:
             enable = args[0]
-            r = pylink.getEYELINK().sendCommand('lock_eye_after_calibration %d' % (enable))
+            r = pylink.getEYELINK().sendCommand(
+                "lock_eye_after_calibration %d" % (enable)
+            )
             return r
-        return ['EYE_TRACKER_ERROR', 'setLockEye',
-                'One argument is required, bool type.']
+        return [
+            "EYE_TRACKER_ERROR",
+            "setLockEye",
+            "One argument is required, bool type.",
+        ]
     except Exception as e:
         printExceptionDetailsToStdErr()
 
@@ -1685,7 +1788,7 @@ def _setNativeRecordingFileSaveDir(*args):
     try:
         if len(args) > 0:
             edfpath = args[0]
-            print2err('Setting File Save path: ', edfpath)
+            print2err("Setting File Save path: ", edfpath)
             EyeTracker._local_edf_dir = edfpath
     except Exception as e:
         printExceptionDetailsToStdErr()
