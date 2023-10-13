@@ -19,6 +19,14 @@ Install this package with the following shell command::
 You may also use PsychoPy's builtin plugin/package manager to install this 
 package.
 
+!!! danger "Make sure you have the latest setuptools"
+
+    Run first:
+
+    ``` shell
+    pip install -U setuptools
+    ```
+
 ## Usage
 
 Once the package is installed, PsychoPy will automatically load it when started 
