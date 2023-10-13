@@ -3,16 +3,14 @@ requires = ["setuptools>=40.8.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "psychopy-eyetracker-tobii"
+name = "psychopy-eyetracker-eyelink"
 version = "0.0.1"
-description = "Extension package for PsychoPy which adds support for Tobii eyetrackers."
+description = "Extension package for PsychoPy which adds support for EyeLink eyetrackers."
 readme = "README.md"
 requires-python = ">= 3.7"
 license = {text = "GNU General Public License v3 (GPLv3)"}
 authors = [
-  { name = "Sol Simpson", email = "info@isolver-software.com" },
-  { name = "Matthew Cutone", email = "mcutone@opensceincetools.org" },
-  { name = "Jon Peirce", email = "jon@opensceincetools.org" },
+  { name = "Oscar Esteban", email = "code@oscaresteban.es" }
 ]
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
@@ -25,15 +23,14 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: Implementation :: CPython",
 ]
-urls.homepage = "https://github.com/psychopy/psychopy-eyetracker-tobii"
-urls.changelog = "https://github.com/psychopy/psychopy-eyetracker-tobii/blob/main/CHANGELOG.txt"
-urls.documentation = "https://pages.github.com/psychopy/psychopy-eyetracker-tobii"
-urls.repository = "https://github.com/psychopy/psychopy-eyetracker-tobii"
+urls.homepage = "https://github.com/oesteban/psychopy-eyetracker-eyelink"
+urls.changelog = "https://github.com/oesteban/psychopy-eyetracker-eyelink/blob/main/CHANGELOG.txt"
+urls.repository = "https://github.com/oesteban/psychopy-eyetracker-eyelink"
 dependencies = [
-    "tobii_research"
+    "pylink"
 ]
 [tool.setuptools.packages.find]
-where = ["", "psychopy_eyetracker_tobii",]
+where = ["", "psychopy_eyetracker_sr_research",]
 
 [tool.setuptools.package-data]
 "*" = ["*.yaml"]
