@@ -541,7 +541,7 @@ class EyeLinkCoreGraphicsIOHubPsychopy(pylink.EyeLinkCustomDisplay):
     def _handleEvent(self, event):
         event_type_index = DeviceEvent.EVENT_TYPE_ID_INDEX
         if event[event_type_index] == EventConstants.KEYBOARD_RELEASE:
-            from .....keyboard import KeyboardInputEvent
+            from psychopy.iohub.devices.keyboard import KeyboardInputEvent
 
             key_index = KeyboardInputEvent.CLASS_ATTRIBUTE_NAMES.index("key")
             char = event[key_index]
