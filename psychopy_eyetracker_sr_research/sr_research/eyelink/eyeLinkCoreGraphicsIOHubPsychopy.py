@@ -8,10 +8,10 @@ from psychopy import visual
 import sys
 import tempfile
 import os
-from ..... import DeviceEvent, Computer
-from ......constants import EventConstants
-from ......errors import print2err, printExceptionDetailsToStdErr
-from ......util import convertCamelToSnake, win32MessagePump, updateSettings
+from psychopy.iohub.devices import DeviceEvent, Computer
+from psychopy.iohub.constants import EventConstants
+from psychopy.iohub.errors import print2err, printExceptionDetailsToStdErr
+from psychopy.iohub.util import convertCamelToSnake, win32MessagePump, updateSettings
 import pylink
 
 
