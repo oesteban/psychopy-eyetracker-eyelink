@@ -26,9 +26,7 @@ classifiers = [
 urls.homepage = "https://github.com/oesteban/psychopy-eyetracker-eyelink"
 urls.changelog = "https://github.com/oesteban/psychopy-eyetracker-eyelink/blob/main/CHANGELOG.txt"
 urls.repository = "https://github.com/oesteban/psychopy-eyetracker-eyelink"
-dependencies = [
-    "pylink"
-]
+dependencies = []
 [tool.setuptools.packages.find]
 where = ["", "psychopy_eyetracker_sr_research",]
 
