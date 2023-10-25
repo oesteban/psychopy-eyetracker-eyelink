@@ -125,12 +125,12 @@ eyetracker.hw.sr_research.eyelink.EyeTracker:
         #   target_type value they will simple be ignored.
         #
         target_attributes:
-            outer_diameter: 33.0
-            inner_diameter: 6.0
-            outer_stroke_width: 2.0
+            outer_diameter: 0.2
+            inner_diameter: 0.1
+            outer_stroke_width: 0.25
             outer_fill_color: [64,64,64]
             outer_line_color: [255,255,255]
-            inner_stroke_width: 1.0
+            inner_stroke_width: 0.25
             inner_fill_color: [255,0,0]
             inner_line_color: [0,0,0]
             # outer_color and inner_color are deprecated
