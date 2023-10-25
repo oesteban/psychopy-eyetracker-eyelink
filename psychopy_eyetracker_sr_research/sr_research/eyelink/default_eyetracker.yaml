@@ -86,7 +86,7 @@ eyetracker.hw.sr_research.eyelink.EyeTracker:
         color_type:
 
         # unit_type: norm, pix, height, deg, etc. Leave blank to use window's unit type.
-        unit_type:
+        unit_type: norm
 
         # auto_pace: If True, the eye tracker will automatically progress from
         # one calibration point to the next. If False, a manual key or button press
@@ -107,7 +107,7 @@ eyetracker.hw.sr_research.eyelink.EyeTracker:
         
         # screen_background_color: Specifies the background color to
         #   set the calibration, validation, etc, screens to.
-        screen_background_color: [128,128,128]
+        screen_background_color: [-128,-128,-128]
 
         # text_color specifies the foreground color of any text used during calibration.
         # If empty, text_color is calculated automatically based on screen_background_color.
@@ -131,7 +131,7 @@ eyetracker.hw.sr_research.eyelink.EyeTracker:
             outer_fill_color: [64,64,64]
             outer_line_color: [255,255,255]
             inner_stroke_width: 0.25
-            inner_fill_color: [255,0,0]
+            inner_fill_color: [0,255,0]
             inner_line_color: [0,0,0]
             # outer_color and inner_color are deprecated
             outer_color:
@@ -170,7 +170,7 @@ eyetracker.hw.sr_research.eyelink.EyeTracker:
         #   sample rates depend on the model being used. 
         #   Overall, possible rates are 250, 500, 1000, and 2000 Hz.
         #
-        sampling_rate: 250
+        sampling_rate: 1000
 
         # track_eyes: Which eye(s) should be tracked? 
         #   Supported Values:  LEFT_EYE, RIGHT_EYE, BINOCULAR
@@ -229,7 +229,7 @@ eyetracker.hw.sr_research.eyelink.EyeTracker:
     #   For the eyelink implementation, valid values are:
     #       'EYELINK 1000 DESKTOP', 'EYELINK 1000 TOWER', 'EYELINK 1000 REMOTE', 
     #       'EYELINK 1000 LONG RANGE'
-    model_name: EYELINK 1000 DESKTOP
+    model_name: EYELINK 1000 LONG RANGE
 
     # manufacturer_name: Used by Builder as the displayed name in the eye tracker selection dropdown.
     #
